@@ -44,6 +44,7 @@ import parameters_ofdm as para
 class top_block(gr.top_block, Qt.QWidget):
 
     def __init__(self):
+        #initializing GUI window 
         gr.top_block.__init__(self, "Top Block")
         Qt.QWidget.__init__(self)
         self.setWindowTitle("Top Block")
@@ -175,17 +176,25 @@ class top_block(gr.top_block, Qt.QWidget):
         ##################################################
         # Blocks
         ##################################################
+        """
+                pluto sdr reciever side:
+                    all parameters are set in the file settings.py 
+        """
         self.pluto_receiver    = iio.pluto_source(settings.RECEIVER, settings.CENTRAL_FREQUENCY,
                                     settings.SAMPLE_RATE,
                                     settings.BANDWIDTH_RF, 
                                     settings.BUFFER_SIZE,
                                     settings.QUADRA_TRACKING,
                                     settings.DC_TRACKING,
-                                    settings.DC_TRACKING,
+                                    settings.BB_TRACKING,
                                     settings.GAIN_MODE,
                                     settings.MANUAL_GAIN,
                                     settings.FILTER,
                                     settings.AUTO_FILTER)
+        """
+                pluto sdr transmitter
+                    all parameters set in the file settings.py
+        """
         self.pluto_transmitter  = iio.pluto_sink(settings.TRANSMITTER, settings.CENTRAL_FREQUENCY,
                                                 settings.SAMPLE_RATE,
                                                 settings.BANDWIDTH_RF,
@@ -194,14 +203,15 @@ class top_block(gr.top_block, Qt.QWidget):
                                                 settings.ATTENUATION,
                                                 settings.FILTER,
                                                 settings.AUTO_FILTER)
-	self.blocks_tag_gate_0 = blocks.tag_gate(gr.sizeof_gr_complex * 1, False)
-        self.source_0  = source.blk()
-        self.tx_0      = transmitter()
-	self.rx_0      = receiver()
+	#self.blocks_tag_gate_0 = blocks.tag_gate(gr.sizeof_gr_complex * 1, False)
+        self.source_0  = source.blk() #data source
+        self.tx_0      = transmitter()  #block to create the OFDM symbols 
+	self.rx_0      = receiver()     #block to handle and demodulate the received signal
         #self.throttler = blocks.throttle(gr.sizeof_char*1, 5000000,False)
-	self.converter = blocks.char_to_float(1, 255)
+	self.converter = blocks.char_to_float(1, 255) #block only needed to visualize the results
         self.connect((self.source_0,0),(self.tx_0,0))
-        self.connect((self.tx_0,0),(self.blocks_tag_gate_0,0), (self.pluto_transmitter,0))
+        #self.connect((self.tx_0,0),(self.blocks_tag_gate_0,0), (self.pluto_transmitter,0))
+        self.connect((self.tx_0,0), (self.pluto_transmitter,0))
         self.connect((self.pluto_receiver,0), blocks.file_sink(gr.sizeof_gr_complex,"received.dat"))
         self.connect((self.pluto_receiver,0) ,(self.qtgui_freq_sink_x_0,0))
 	self.connect((self.pluto_receiver,0),(self.rx_0,0))

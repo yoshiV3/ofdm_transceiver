@@ -8,11 +8,16 @@ import tagger
 import framer
 import ownHeader
 
-symbol_settings     = para.ofdm_symbol()
-SYNC_ONE            = symbol_settings._generate_sync_word_one()
-SYNC_TWO            = symbol_settings._generate_sync_word_two()
-SYM_PILOT           = symbol_settings._generate_pilot_symbols()
+symbol_settings     = para.ofdm_symbol() #object with settings concerning OFDM symbols
+SYNC_ONE            = symbol_settings._generate_sync_word_one() #generating the first sync word
+SYNC_TWO            = symbol_settings._generate_sync_word_two() #generating the second sync word
+SYM_PILOT           = symbol_settings._generate_pilot_symbols() #generating the thrid sync word
 
+"""
+    hierarchical block that generates the OFDM frames and symbols 
+     takes the data in bytes and outputs the complex signal that can be transmitted (by the Pluto sdr)
+     The incoming stream is split into two streams: a stream for the headers and a stream for the data 
+"""
 class transmitter(gr.hier_block2):
 
     def __init__(self):
@@ -23,10 +28,13 @@ class transmitter(gr.hier_block2):
         self.constellationH = helpers.get_constellation(settings.HEADER_BPS)
         self.sync_words      = [SYNC_ONE,SYNC_TWO]
 		#tag the received bytes
-        tagger_0  = tagger.blk(settings.PAYLOAD_BPS, settings.LENGTH_TAG_KEY,1,0)
-		#handling the header
-        header_gen = ownHeader.generate_header_bb(settings.LENGTH_TAG_KEY)
-        scramblerH = digital.digital.additive_scrambler_bb(
+        tagger_0  = tagger.blk(settings.PAYLOAD_BPS, settings.LENGTH_TAG_KEY,1,0) #divides the incoming byte stream into packets and append the meta data 
+	"""
+            this part will handle the header stream
+            from the tagged data stream the header is derived, scrambled and modulated
+        """
+        header_gen = ownHeader.generate_header_bb(settings.LENGTH_TAG_KEY) #geneating the header
+        scramblerH = digital.digital.additive_scrambler_bb(     #srambling the header bytes
 			0x8a,
 			settings.SCRAMBLED_SEED,
 			7,
@@ -34,15 +42,21 @@ class transmitter(gr.hier_block2):
 			bits_per_byte = 8,
 			reset_tag_key = settings.LENGTH_TAG_KEY
 		)
-        unpackerH = blocks.repack_bits_bb(
+        """
+            Modulating the data: first split the bytes into the size of the symbols (unpackerH) then transform the smaller groups of bits into the complex symbols
+        """
+        unpackerH = blocks.repack_bits_bb(  
 			8,
 			settings.HEADER_BPS,
 			settings.LENGTH_TAG_KEY
         )
         modulatorH = digital.chunks_to_symbols_bc(self.constellationH.points())
-		#payload handling
-        crc       = digital.crc32_bb(False, settings.LENGTH_TAG_KEY)
-        scrambler = digital.digital.additive_scrambler_bb(
+	"""
+            This part wil handle the data stream
+            first a error detection code is appended to stream, then the data is scrambled, and modulated to complex symbols 
+        """
+        crc       = digital.crc32_bb(False, settings.LENGTH_TAG_KEY) #error detection
+        scrambler = digital.digital.additive_scrambler_bb(           #scrambling
 			0x8a,
 			settings.SCRAMBLED_SEED,
 			7,
@@ -50,13 +64,20 @@ class transmitter(gr.hier_block2):
 			bits_per_byte = 8,
 			reset_tag_key = settings.LENGTH_TAG_KEY
 		)
+        """
+            modulation: split into a group of bits with convenient size, transform the smaller groups into the complex symbols
+        """
         unpacker = blocks.repack_bits_bb(
 			8,
 			settings.PAYLOAD_BPS,
 			settings.LENGTH_TAG_KEY
 		)
         modulator = digital.chunks_to_symbols_bc(self.constellationP.points())
-		#combining header and payload
+	"""
+            This part will handle the full ofdm frame, both data, header and preamble 
+            first the payload and the header stream is combined, then the complex symbols are allocated the carrier tones and the pilot symbols are append and the preambles is inserted 
+            Thereafter, the FFT is calculated, at last the cyclic prefixes are inserted
+        """
         header_payload_mux = blocks.tagged_stream_mux(
 			itemsize=gr.sizeof_gr_complex*1,
 			lengthtagname = settings.LENGTH_TAG_KEY,
@@ -113,7 +134,12 @@ class transmitter(gr.hier_block2):
         #self.connect(prefixer, blocks.file_sink(gr.sizeof_gr_complex,"tx.dat"))
         print("All blocks properly connected")
 	#self.connect(header_gen, blocks.file_sink(1,'header.txt')) 
-		
+"""
+Hierarchical block to parse the received data stream 
+first we detect the incoming stream, then we correct the frequency offset 
+thirdly, we retrieve the header from the incoming stream, parse the header for the meta data
+lastly, we retrieve the actual data 
+"""
 class receiver(gr.hier_block2):
 	def __init__(self):
 		gr.hier_block2.__init__(self, "ofdm_tx",
@@ -205,6 +231,9 @@ class receiver(gr.hier_block2):
 		payload_pack = blocks.repack_bits_bb(settings.PAYLOAD_BPS, 8, settings.LENGTH_PACKET_KEY, True)
                 crc = digital.crc32_bb(True, settings.LENGTH_PACKET_KEY)
                 gate = blocks.tag_gate(gr.sizeof_gr_complex,False)
+                """
+                    detecting the the preamble
+                """
 		self.connect(self,detector)
 		self.connect(self,delayer, (mixer,0))
                 self.connect(gate,(splitter,0))
@@ -213,6 +242,9 @@ class receiver(gr.hier_block2):
 		self.connect((detector,0), oscillator, (mixer,1))
 		self.connect((detector,1),(splitter,1))
 		#header handling stream
+                """
+                parse the header data
+                """
 		self.connect((splitter,0), 
 			      header_fft,
 			      chanest,
@@ -224,8 +256,11 @@ class receiver(gr.hier_block2):
 			      scramblerH,
 			      parser,
 			      sender) 
-		self.msg_connect(sender, "header", splitter, "header_data")
+		self.msg_connect(sender, "header", splitter, "header_data") #feedback to the demux 
 		#data handler stream
+                """
+                    retrieve the data
+                """
                 self.connect((splitter,1), 
 				payload_fft,
 				payload_eq,
