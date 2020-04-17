@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Top Block
-# Generated: Fri Apr 10 17:59:07 2020
+# Generated: Wed Apr 15 09:31:44 2020
 ##################################################
 
 from distutils.version import StrictVersion
@@ -130,7 +130,7 @@ class top_block(gr.top_block, Qt.QWidget):
         	1 #number of inputs
         )
         self.qtgui_freq_sink_x_0_0.set_update_time(1)
-        self.qtgui_freq_sink_x_0_0.set_y_axis(-140, 10)
+        self.qtgui_freq_sink_x_0_0.set_y_axis(-70, 0)
         self.qtgui_freq_sink_x_0_0.set_y_label('Relative Gain', 'dB')
         self.qtgui_freq_sink_x_0_0.set_trigger_mode(qtgui.TRIG_MODE_FREE, 0.0, 0, "")
         self.qtgui_freq_sink_x_0_0.enable_autoscale(False)

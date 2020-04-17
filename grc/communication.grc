@@ -1213,11 +1213,11 @@
     </param>
     <param>
       <key>ymax</key>
-      <value>10</value>
+      <value>0</value>
     </param>
     <param>
       <key>ymin</key>
-      <value>-140</value>
+      <value>-70</value>
     </param>
     <param>
       <key>units</key>
