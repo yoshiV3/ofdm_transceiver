@@ -1,6 +1,10 @@
+#general
+node1 = 1
+node2 = 2
 #Modulation
-PAYLOAD_BPS = 2 #bit per symbol for the payload 
-HEADER_BPS  = 1 #bits per symbol for the header: lower than the bits per symbol in the payload, because more critical to receive correctly
+PAYLOAD_BPS    = 2 #bit per symbol for the payload 
+HEADER_BPS     = 1 #bits per symbol for the header: lower than the bits per symbol in the payload, because more critical to receive correctly
+PACKET_LENGTH  = 64
 
 #SCRAMBLING
 SCRAMBLED_SEED   = 0x7F  #seed for the scrambling of the bits
@@ -32,8 +36,12 @@ TONES_NEGATIVE = list(range(-26,-21)) + list(range(-20,-7)) + list(range(-6,0)) 
 PILOT_TONES    = [-7,-21, 7, 21]  #pilot tones
 FFT_LENGTH     = 64               #length of the FFT
 CP_LENGTH      = 16               #cyclic prefix 
+BYTES_PER_SYM  = 1
+NB_OF_SYMBOLS_PER_FRAME = 1
+SAFETY_PADDING   =1
 
 #tag keys 
-LENGTH_TAG_KEY    = "packet_len" #tags for metadata on the stream 
-LENGTH_HEADER_KEY = "header_len" 
-LENGTH_PACKET_KEY = "packet_len"
+p_len_tag_key = "p_len"
+h_len_tag_key = "h_len"
+f_len_tag_key = "f_len"
+

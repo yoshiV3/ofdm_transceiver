@@ -1,1 +1,1 @@
-/usr/bin/python -u /mnt/c/Users/yoshi/Documents/school/master1.2/PandD/ofdm/python_files/debug/top_block.py
+/usr/bin/python -u /mnt/c/Users/yoshi/Documents/school/master1.2/PandD/ofdm/python_files/small/debug/top_block.py

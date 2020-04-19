@@ -1,0 +1,26 @@
+ownHeader
+
+generate_short_bb
+	working:generates the header based on the metadata appended to the systream
+	parameters: len_tag_key, tag_payload_len, tag_payload_len, tag_receiver_key
+
+
+
+Small
+
+settings
+	p_len_tag_key
+	h_len_tag_key
+	f_len_tag_key
+	SYMBOL_LENGTH
+	NB_OF_SYMBOLS_PER_FRAME
+	SAFETY_PADDING
+	nodeOne_ID
+	maxPayload
+	
+framer 
+
+
+
+formatter
+	
